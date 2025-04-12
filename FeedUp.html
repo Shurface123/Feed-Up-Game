@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feed Up Game</title>
+<style>
+    *{
+        padding: 0;
+        margin: 0;
+    }
+    body{
+        height: 100dvh;
+        width: 100%;
+        background: black;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    section{
+        height: 90%;
+        width: 90%;       
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+    }
+    #alert{
+        z-index: 5;
+        height: 100dvh;
+        width: 100%;
+        backdrop-filter: blur(1px);
+        position: fixed;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    #alert .article{
+        background-color: #111;
+        border-radius: 10px;
+        border: 2px solid #333;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: .5rem;
+        animation: scale 0.5s ease-out 1  forwards;
+    }
+    @keyframes scale {
+        from{
+            transform: scale(30%, 30%);
+        }
+        to{
+            transform: (100%, 100%);;
+        }
+        
+    }
+    .article h2{
+        text-align: center;
+        color: #999;
+        font-family: monospace;
+        font-size: 1.3rem;
+        font-weight: 100;
+    }
+    #alertbtn{
+        text-align: center;
+        padding: .3rem;
+        border: none;
+        border-radius: 5px;
+        background-color: hsl(120, 100%, 15%);
+        color: white;
+        font-size: 1rem;
+        font-family: monospace;
+    }
+    #alertbtn:hover{
+        background-color: hsl(120, 100%, 20%);
+    }
+    #alertbtn:active{
+        background-color: hsl(120, 100%, 25%);
+    }
+    section .text{
+        display: flex;
+        width: 100%;
+    }
+    section h1{
+        color: #bbb;
+        font-family: monospace;
+        font-size: 1.2rem;
+        font-weight: 500;
+    }
+    section .score{
+        margin-left: auto;
+    }
+    section .box{
+        position: relative;
+        overflow: hidden;
+        height: 100%;
+        width: 100%;
+        border: 2px solid #222;
+    }
+    #mag{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        font-size: 2rem;
+        height: 1rem;
+        width: 1rem;
+        background-color: hsl(0, 100%, 30%);
+        position: absolute;
+        z-index: 2;
+        top: 0%;
+        left: 0%;
+    }
+    #iron{
+        font-size: 2rem;
+        position: absolute;
+        z-index: 1;
+        height: 1rem;
+        width: 1rem;
+        background-color: #999;
+        top: 50%;
+        left: 50%;
+    }
+    .ctrlbtn{
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: .5rem 0 0 0;
+    }
+    .ctrlbtn button{
+        font-size: 2rem;
+        height: 3rem;
+        width: 3rem;
+        border: none;
+        background-color: #222;
+        color: #777;
+    }
+    .ctrlbtn .btn:hover{
+        background-color: #444;
+        color: #999;
+    }
+    .ctrlbtn .btn:active{
+        background-color: #666;
+        color: #aaa;
+    }
+    .ctrlbtn div{
+        display: flex;
+        justify-content: space-between;
+    }
+    
+</style>
+</head>
+<body>
+    <div id="alert">
+        <article class="article">
+            <h2 id="alertmsg">Welcome!</h2>
+            <h2 id="alertscore"></h2>
+            <button id="alertbtn" onclick="start()">Start</button> 
+        </article>       
+    </div>
+    <section>
+        <div class="text">
+            <h1>Small Game</h1>
+            <h1 class="score">Score: <span id="disScore">0</span></h1>
+        </div>          
+        <div class="box">
+            <div id="mag"></div>
+            <div id="iron"></div>
+        </div>        
+        <div class="ctrlbtn">
+            <button class="btn">▲</button>
+            <div>
+                <button class="btn">◀</button>
+                <button></button>
+                <button class="btn">▶</button>
+            </div>
+            <button class="btn">▼</button>            
+        </div>
+    </section>
+
+<script>
+    const alertBox = document.getElementById("alert");
+    const alertmsg = document.getElementById("alertmsg");
+    const alertbtn = document.getElementById("alertbtn");
+    const alertscore = document.getElementById("alertscore");
+    const disScore = document.getElementById("disScore");
+
+    const mag = document.getElementById("mag");
+    const iron = document.getElementById("iron");
+    const ctrlbtns = document.querySelectorAll('.btn');
+
+    let isRunning = false;
+    let movementInterval = null;
+    let direction = null; // Store movement direction
+    let topdr = 0;
+    let leftdr = 0;
+    let score = 0;
+    const movementAmount = 2;
+
+    const minNum = 0;
+    const maxNum = 95; // Adjusted to prevent food from appearing outside the box
+
+    let dtop = Math.floor(Math.random() * (maxNum - minNum) + minNum);
+    let dleft = Math.floor(Math.random() * (maxNum - minNum) + minNum);
+
+    function start() {
+        isRunning = true;
+        alertBox.style.display = "none";
+        topdr = 0;
+        leftdr = 0;
+        score = 0;
+        mag.style.top = `${topdr}%`;
+        mag.style.left = `${leftdr}%`;
+        disScore.textContent = score;
+        updateFoodPosition();
+        clearInterval(movementInterval);
+    }
+
+    function gameOver() {
+        isRunning = false;
+        alertBox.style.display = "flex";
+        alertmsg.textContent = "Game Over!";
+        alertscore.textContent = `Score: ${score}`;
+        alertbtn.textContent = "Restart";
+        clearInterval(movementInterval);
+    }
+
+    function updateFoodPosition() {
+        dtop = Math.floor(Math.random() * (maxNum - minNum) + minNum);
+        dleft = Math.floor(Math.random() * (maxNum - minNum) + minNum);
+        iron.style.top = `${dtop}%`;
+        iron.style.left = `${dleft}%`;
+    }
+
+    function moveSnake() {
+        if (!isRunning) return;
+
+        switch (direction) {
+            case "up":
+                topdr -= movementAmount;
+                break;
+            case "down":
+                topdr += movementAmount;
+                break;
+            case "left":
+                leftdr -= movementAmount;
+                break;
+            case "right":
+                leftdr += movementAmount;
+                break;
+        }
+
+        // Collision detection (Game Over condition)
+        if (topdr < 0 || topdr > maxNum || leftdr < 0 || leftdr > maxNum) {
+            gameOver();
+            return;
+        }
+
+        // Food eating logic
+        if (Math.abs(topdr - dtop) < 2 && Math.abs(leftdr - dleft) < 2) {
+            score+=5;
+            disScore.textContent = score;
+            updateFoodPosition();
+        }
+
+        // Update the snake's position
+        mag.style.top = `${topdr}%`;
+        mag.style.left = `${leftdr}%`;
+    }
+
+    ctrlbtns.forEach(ctrlbtn => {
+        ctrlbtn.addEventListener("click", event => {
+            let arrowType = event.target.innerHTML;
+
+            // Set direction based on button press
+            if (arrowType === "▲") direction = "up";
+            if (arrowType === "▼") direction = "down";
+            if (arrowType === "◀") direction = "left";
+            if (arrowType === "▶") direction = "right";
+
+            // Clear previous interval and start new movement
+            clearInterval(movementInterval);
+            movementInterval = setInterval(moveSnake, 100);
+        });
+    });
+</script>
+</body>
+</html>
